@@ -4,7 +4,7 @@
 
 StreamCoach AI is a powerful web application designed to automatically analyze the performance quality of live streams. Powered by **Google Gemini 3 Flash Preview**, it acts as a virtual consultant, auditing both the visual presentation and audio delivery of your stream to provide actionable, timestamped feedback that helps boost engagement and sales conversion.
 
-![StreamCoach Dashboard](https://via.placeholder.com/1200x600/4F46E5/FFFFFF?text=StreamCoach+AI+Dashboard)
+![StreamCoach infographics](infographics.jpg)
 
 ---
 
