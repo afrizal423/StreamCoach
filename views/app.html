@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Stream - StreamCoach AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        [v-cloak] { display: none; }
+        .progress-bar-fill {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div id="app" v-cloak>
+        <!-- Navigation -->
+        <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <a href="/" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center">
+                    <i class="fas fa-video mr-2 text-indigo-600"></i>
+                    StreamCoach AI
+                </a>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        <span class="text-xs font-semibold text-green-700">API Key Active</span>
+                    </div>
+                    <button @click="logout" class="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="container mx-auto px-6 py-12 max-w-5xl">
+            <!-- Upload Section -->
+            <div v-if="!loading && !result" class="bg-white rounded-3xl shadow-xl p-10 border border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-y-1/2 translate-x-1/2"></div>
+                <div class="relative z-10">
+                    <h2 class="text-4xl font-extrabold mb-2 text-center text-gray-900">New Audit Session</h2>
+                    <p class="text-center text-gray-500 mb-10">Upload your stream recording to get started.</p>
+                    
+                    <div class="max-w-xl mx-auto space-y-8">
+                        <!-- Category Selection -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">Stream Category</label>
+                            <div class="relative">
+                                <i class="fas fa-tag absolute left-4 top-3.5 text-gray-400"></i>
+                                <select v-model="category" class="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-xl py-3 pl-10 pr-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-all appearance-none">
+                                    <option value="Jewelry">Jewelry & Accessories</option>
+                                    <option value="Fashion">Fashion & Apparel</option>
+                                    <option value="General Sales">General Sales</option>
+                                    <option value="Gaming">Gaming / E-sports</option>
+                                    <option value="Education">Education / Tutorial</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-4 top-4 text-gray-400 pointer-events-none text-xs"></i>
+                            </div>
+                        </div>
+
+                        <!-- File Dropzone -->
+                        <div 
+                            @dragover.prevent="dragover = true" 
+                            @dragleave.prevent="dragover = false" 
+                            @drop.prevent="handleDrop"
+                            :class="['border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-300 cursor-pointer group relative overflow-hidden', dragover ? 'border-indigo-500 bg-indigo-50 scale-[1.02]' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50']"
+                            @click="$refs.fileInput.click()"
+                        >
+                            <input type="file" ref="fileInput" class="hidden" @change="handleFileSelect" accept="video/*">
+                            
+                            <div class="relative z-10">
+                                <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-indigo-600"></i>
+                                </div>
+                                <div v-if="!file">
+                                    <p class="text-xl font-bold text-gray-800 mb-2">Drag & Drop your video here</p>
+                                    <p class="text-sm text-gray-500">or click to browse files</p>
+                                    <p class="text-xs text-gray-400 mt-4">Supports MP4, MOV, AVI (Max 50MB)</p>
+                                </div>
+                                <div v-else>
+                                    <p class="text-lg font-bold text-indigo-700 break-all">{{ file.name }}</p>
+                                    <p class="text-sm text-gray-500 mt-1">{{ (file.size / (1024*1024)).toFixed(2) }} MB</p>
+                                    <div class="mt-4 inline-flex items-center text-xs text-indigo-600 font-semibold uppercase tracking-wide bg-indigo-50 px-3 py-1 rounded-full">
+                                        <i class="fas fa-check-circle mr-1"></i> Ready to Upload
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button 
+                            @click="startAnalysis" 
+                            :disabled="!file || !category"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5"
+                        >
+                            Analyze Stream
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="loading" class="bg-white rounded-3xl shadow-xl p-16 text-center border border-gray-100">
+                <div class="relative w-32 h-32 mx-auto mb-8">
+                    <div class="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i class="fas fa-magic text-3xl text-indigo-600 animate-pulse"></i>
+                    </div>
+                </div>
+                <h2 class="text-3xl font-bold mb-4 text-gray-900">Analyzing Performance</h2>
+                <p class="text-gray-500 mb-10 text-lg">{{ loadingText }}</p>
+                
+                <div class="max-w-md mx-auto">
+                    <div class="w-full bg-gray-100 rounded-full h-3 mb-3 overflow-hidden">
+                        <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full progress-bar-fill shadow-[0_0_10px_rgba(99,102,241,0.5)]" :style="{ width: progress + '%' }"></div>
+                    </div>
+                    <p class="text-sm font-semibold text-indigo-600">{{ progress }}% Complete</p>
+                </div>
+            </div>
+
+            <!-- Result Display -->
+            <div v-if="result" class="space-y-8 animate-fade-in-up">
+                <!-- Overview Card -->
+                <div class="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 flex flex-col md:flex-row items-center gap-10">
+                    <div class="relative w-48 h-48 flex-shrink-0">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-gray-100" stroke-width="2.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path :class="scoreColor" stroke-width="2.5" :stroke-dasharray="result.overall_score + ', 100'" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-5xl font-extrabold text-gray-900">{{ result.overall_score }}</span>
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Score</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="inline-block px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wide mb-4">Executive Summary</div>
+                        <h2 class="text-3xl font-bold mb-4 text-gray-900">Analysis Report</h2>
+                        <p class="text-gray-600 leading-relaxed text-lg">{{ result.summary_reasoning }}</p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Strengths -->
+                    <div class="bg-white rounded-3xl p-8 border border-green-100 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50"></div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-check text-green-600"></i>
+                            </div>
+                            Key Strengths
+                        </h3>
+                        <ul class="space-y-4">
+                            <li v-for="s in result.strengths" :key="s" class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3 flex-shrink-0"></i>
+                                <span class="text-gray-700">{{ s }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Weaknesses -->
+                    <div class="bg-white rounded-3xl p-8 border border-red-100 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50"></div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-exclamation text-red-600"></i>
+                            </div>
+                            Growth Areas
+                        </h3>
+                        <ul class="space-y-4">
+                            <li v-for="w in result.weaknesses" :key="w" class="flex items-start">
+                                <i class="fas fa-times-circle text-red-500 mt-1 mr-3 flex-shrink-0"></i>
+                                <span class="text-gray-700">{{ w }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Timeline Flags -->
+                <div class="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100">
+                    <h3 class="text-2xl font-bold mb-8 text-gray-900 flex items-center">
+                        <i class="fas fa-clock text-indigo-500 mr-3"></i> Timeline Analysis
+                    </h3>
+                    <div class="space-y-4">
+                        <div v-for="flag in result.timeline_flags" :key="flag.time" class="flex flex-col md:flex-row md:items-center p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:border-indigo-200 transition-colors">
+                            <div class="flex items-center mb-3 md:mb-0 md:mr-6">
+                                <div class="bg-white border border-gray-200 text-gray-700 px-4 py-1.5 rounded-lg font-mono font-bold text-sm shadow-sm">
+                                    {{ flag.time }}
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <span :class="['text-[10px] font-extrabold uppercase px-2 py-1 rounded-md mr-3 tracking-wider', flag.severity.toLowerCase() === 'high' ? 'bg-red-100 text-red-700' : (flag.severity.toLowerCase() === 'medium' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700')]">
+                                        {{ flag.severity }}
+                                    </span>
+                                    <span class="font-medium text-gray-800">{{ flag.issue }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actionable Advice -->
+                <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl shadow-xl p-8 md:p-10 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
+                    <div class="relative z-10">
+                        <h3 class="text-2xl font-bold mb-6 flex items-center">
+                            <i class="fas fa-lightbulb text-yellow-300 mr-3 text-2xl"></i> Coach's Top Advice
+                        </h3>
+                        <div class="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
+                            <p class="text-indigo-50 text-lg leading-relaxed italic">"{{ result.improvement_tips }}"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-center items-center gap-4 pt-8 pb-12">
+                    <button @click="reset" class="px-6 py-3 rounded-xl text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 font-bold transition-colors">
+                        <i class="fas fa-redo mr-2"></i> Analyze Another Video
+                    </button>
+                    <button @click="exportPDF" class="px-8 py-3 bg-gray-900 text-white rounded-xl font-bold shadow-lg hover:bg-gray-800 hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center">
+                        <i class="fas fa-file-pdf mr-2"></i> Download Report (PDF)
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const apiKey = ref('');
+                const category = ref('Jewelry');
+                const file = ref(null);
+                const dragover = ref(false);
+                const loading = ref(false);
+                const loadingText = ref('Uploading video...');
+                const progress = ref(0);
+                const result = ref(null);
+
+                onMounted(() => {
+                    apiKey.value = localStorage.getItem('gemini_api_key');
+                    if (!apiKey.value) window.location.href = '/';
+                });
+
+                const handleFileSelect = (e) => {
+                    file.value = e.target.files[0];
+                };
+
+                const handleDrop = (e) => {
+                    dragover.value = false;
+                    file.value = e.dataTransfer.files[0];
+                };
+
+                const startAnalysis = async () => {
+                    loading.value = true;
+                    progress.value = 10;
+                    loadingText.value = 'Uploading and processing video...';
+
+                    const formData = new FormData();
+                    formData.append('video', file.value);
+                    formData.append('apiKey', apiKey.value);
+                    formData.append('category', category.value);
+
+                    try {
+                        // Simulate progress while waiting for backend
+                        const progressInterval = setInterval(() => {
+                            if (progress.value < 90) {
+                                progress.value += 2;
+                                if (progress.value > 40) loadingText.value = 'Extracting audio and frames...';
+                                if (progress.value > 70) loadingText.value = 'Gemini is analyzing your performance...';
+                            }
+                        }, 500);
+
+                        const response = await fetch('/api/analyze', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        clearInterval(progressInterval);
+                        
+                        if (!response.ok) throw new Error('Analysis failed');
+
+                        progress.value = 100;
+                        result.value = await response.json();
+                        loading.value = false;
+                    } catch (error) {
+                        alert('Error: ' + error.message);
+                        loading.value = false;
+                    }
+                };
+
+                const scoreColor = computed(() => {
+                    if (!result.value) return 'stroke-indigo-600';
+                    const s = result.value.overall_score;
+                    if (s >= 80) return 'stroke-green-500';
+                    if (s >= 60) return 'stroke-yellow-500';
+                    return 'stroke-red-500';
+                });
+
+                const logout = () => {
+                    localStorage.removeItem('gemini_api_key');
+                    window.location.href = '/';
+                };
+
+                const reset = () => {
+                    result.value = null;
+                    file.value = null;
+                    progress.value = 0;
+                };
+
+                const exportPDF = () => {
+                    if (!result.value) return;
+                    
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const r = result.value;
+
+                    // Title
+                    doc.setFontSize(20);
+                    doc.setTextColor(79, 70, 229); // Indigo 600
+                    doc.text("StreamCoach AI Analysis Report", 105, 20, null, "center");
+                    
+                    doc.setFontSize(10);
+                    doc.setTextColor(100);
+                    doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 28, null, "center");
+
+                    let yPos = 40;
+
+                    // Overall Score
+                    doc.setFontSize(14);
+                    doc.setTextColor(0);
+                    doc.text(`Overall Score: ${r.overall_score}/100`, 14, yPos);
+                    yPos += 10;
+
+                    // Summary
+                    doc.setFontSize(12);
+                    doc.setTextColor(0);
+                    doc.setFont(undefined, 'bold');
+                    doc.text("Summary:", 14, yPos);
+                    yPos += 7;
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(10);
+                    const summaryLines = doc.splitTextToSize(r.summary_reasoning, 180);
+                    doc.text(summaryLines, 14, yPos);
+                    yPos += (summaryLines.length * 5) + 5;
+
+                    // Strengths & Weaknesses
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(22, 163, 74); // Green
+                    doc.text("Strengths:", 14, yPos);
+                    yPos += 7;
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0);
+                    doc.setFontSize(10);
+                    r.strengths.forEach(s => {
+                        const lines = doc.splitTextToSize(`• ${s}`, 180);
+                        doc.text(lines, 14, yPos);
+                        yPos += (lines.length * 5);
+                    });
+                    yPos += 5;
+
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(220, 38, 38); // Red
+                    doc.text("Areas for Improvement:", 14, yPos);
+                    yPos += 7;
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0);
+                    doc.setFontSize(10);
+                    r.weaknesses.forEach(w => {
+                        const lines = doc.splitTextToSize(`• ${w}`, 180);
+                        doc.text(lines, 14, yPos);
+                        yPos += (lines.length * 5);
+                    });
+                    yPos += 10;
+
+                    // Timeline Flags (Table)
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.text("Timeline Analysis:", 14, yPos);
+                    yPos += 5;
+
+                    const tableData = r.timeline_flags.map(f => [f.time, f.severity.toUpperCase(), f.issue]);
+                    
+                    doc.autoTable({
+                        startY: yPos,
+                        head: [['Time', 'Severity', 'Issue']],
+                        body: tableData,
+                        theme: 'grid',
+                        headStyles: { fillColor: [79, 70, 229] },
+                        styles: { fontSize: 9 },
+                        columnStyles: {
+                            0: { cellWidth: 20 },
+                            1: { cellWidth: 25 },
+                            2: { cellWidth: 'auto' }
+                        }
+                    });
+
+                    yPos = doc.lastAutoTable.finalY + 10;
+
+                    // Improvement Tips
+                    // Check if new page is needed
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(79, 70, 229);
+                    doc.text("Coach's Advice:", 14, yPos);
+                    yPos += 7;
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0);
+                    doc.setFontSize(10);
+                    const tipsLines = doc.splitTextToSize(r.improvement_tips, 180);
+                    doc.text(tipsLines, 14, yPos);
+
+                    doc.save("streamcoach_analysis.pdf");
+                };
+
+                return {
+                    category, file, dragover, loading, loadingText, progress, result,
+                    handleFileSelect, handleDrop, startAnalysis, scoreColor, logout, reset, exportPDF
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

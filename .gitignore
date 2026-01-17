@@ -1,0 +1,4 @@
+streamcoach.exe
+uploads/
+*.log
+.DS_Store
