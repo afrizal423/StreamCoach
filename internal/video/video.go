@@ -1,6 +1,7 @@
 package video
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,7 +15,7 @@ type ProcessResult struct {
 }
 
 // ProcessVideo extracts frames every 10 seconds and full audio from the video
-func ProcessVideo(videoPath string, outputDir string) (*ProcessResult, error) {
+func ProcessVideo(ctx context.Context, videoPath string, outputDir string) (*ProcessResult, error) {
 	// Create unique subfolder for this processing job
 	jobID := filepath.Base(videoPath)
 	jobDir := filepath.Join(outputDir, jobID+"_processed")
@@ -25,7 +26,7 @@ func ProcessVideo(videoPath string, outputDir string) (*ProcessResult, error) {
 
 	// 1. Extract Audio
 	audioPath := filepath.Join(jobDir, "audio.mp3")
-	cmdAudio := exec.Command("ffmpeg", "-i", videoPath, "-vn", "-ar", "44100", "-ac", "2", "-b:a", "128k", audioPath)
+	cmdAudio := exec.CommandContext(ctx, "ffmpeg", "-i", videoPath, "-vn", "-ar", "44100", "-ac", "2", "-b:a", "128k", audioPath)
 	if err := cmdAudio.Run(); err != nil {
 		return nil, fmt.Errorf("failed to extract audio: %v", err)
 	}
@@ -33,7 +34,7 @@ func ProcessVideo(videoPath string, outputDir string) (*ProcessResult, error) {
 	// 2. Extract Frames (every 10 seconds)
 	// %03d.jpg will create 001.jpg, 002.jpg, etc.
 	framePattern := filepath.Join(jobDir, "frame_%03d.jpg")
-	cmdFrames := exec.Command("ffmpeg", "-i", videoPath, "-vf", "fps=1/10", framePattern)
+	cmdFrames := exec.CommandContext(ctx, "ffmpeg", "-i", videoPath, "-vf", "fps=1/10", framePattern)
 	if err := cmdFrames.Run(); err != nil {
 		return nil, fmt.Errorf("failed to extract frames: %v", err)
 	}

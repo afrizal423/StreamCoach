@@ -3,10 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"streamcoach/internal/ai"
+	"streamcoach/internal/queue"
 	"streamcoach/internal/video"
 )
 
@@ -42,16 +44,17 @@ func AnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, header, err := r.FormFile("video")
-	if err != nil {
-		http.Error(w, "Video file is required", http.StatusBadRequest)
-		return
-	}
-	defer file.Close()
-
+		file, header, err := r.FormFile("video")
+		if err != nil {
+			http.Error(w, "Video file is required", http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
+	
+		log.Printf("[UPLOAD] Received file: %s (%d bytes)", header.Filename, header.Size)
+	
 		apiKey := r.FormValue("apiKey")
-
-		category := r.FormValue("category")
+			category := r.FormValue("category")
 
 		language := r.FormValue("language")
 
@@ -97,51 +100,89 @@ func AnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		dst.Close() // Close immediately to release file lock for FFmpeg/Deletion
+				dst.Close() // Close immediately to release file lock for FFmpeg/Deletion
 
-	
+			
 
-		// 3. Process Video (FFmpeg)
+				// --- QUEUE ACQUISITION START ---
 
-		processResult, err := video.ProcessVideo(tempPath, "uploads")
+				log.Println("[QUEUE] User entering queue...")
 
-		if err != nil {
+				release, err := queue.Manager.Acquire(r.Context())
 
-			os.Remove(tempPath) // Clean up the original video on error
+				if err != nil {
 
-			http.Error(w, "Error processing video: "+err.Error(), http.StatusInternalServerError)
+					log.Printf("[QUEUE] User left queue or error: %v", err)
 
-			return
+					os.Remove(tempPath)
 
-		}
+					http.Error(w, "Service busy or request cancelled: "+err.Error(), http.StatusServiceUnavailable)
 
-		
+					return
 
-		// Delete original video immediately after processing as it's no longer needed
+				}
 
-		os.Remove(tempPath)
+				defer release()
 
-	
+				log.Println("[QUEUE] Slot acquired. Starting process...")
 
-		// Prepare job directory for cleanup after AI analysis
+			
 
-		jobDir := filepath.Dir(processResult.AudioPath)
+				// 3. Process Video (FFmpeg)
 
-		defer os.RemoveAll(jobDir) // Ensures audio and frames are deleted when handler returns
+				log.Println("[VIDEO] Starting FFmpeg processing (extracting audio and frames)...")
 
-	
+				processResult, err := video.ProcessVideo(r.Context(), tempPath, "uploads")
 
-		// 4. Call Gemini AI
+				if err != nil {
 
-		analysis, err := ai.AnalyzeStream(apiKey, category, language, processResult.AudioPath, processResult.FramePaths)
+					log.Printf("[VIDEO] FFmpeg error: %v", err)
 
-	
-	if err != nil {
-		http.Error(w, "AI Analysis failed: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+					os.Remove(tempPath)
 
-	// 5. Return JSON Result
+					http.Error(w, "Error processing video: "+err.Error(), http.StatusInternalServerError)
+
+					return
+
+				}
+
+				log.Println("[VIDEO] FFmpeg processing complete.")
+
+				
+
+				os.Remove(tempPath)
+
+			
+
+				jobDir := filepath.Dir(processResult.AudioPath)
+
+				defer os.RemoveAll(jobDir)
+
+			
+
+				// 4. Call Gemini AI
+
+				log.Printf("[AI] Sending request to Gemini 3 Flash Preview (Category: %s, Lang: %s)...", category, language)
+
+				analysis, err := ai.AnalyzeStream(r.Context(), apiKey, category, language, processResult.AudioPath, processResult.FramePaths)
+
+				if err != nil {
+
+					log.Printf("[AI] Gemini error: %v", err)
+
+					http.Error(w, "AI Analysis failed: "+err.Error(), http.StatusInternalServerError)
+
+					return
+
+				}
+
+				log.Printf("[AI] Received response from Gemini. Score: %d", analysis.OverallScore)
+
+			
+
+				// 5. Return JSON Result
+
+			
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(analysis)
 }

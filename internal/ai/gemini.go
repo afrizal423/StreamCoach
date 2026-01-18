@@ -29,8 +29,7 @@ type Flag struct {
 }
 
 // AnalyzeStream calls Gemini 3 Flash Preview with the multimodal data
-func AnalyzeStream(apiKey string, category string, language string, audioPath string, framePaths []string) (*AnalysisResult, error) {
-	ctx := context.Background()
+func AnalyzeStream(ctx context.Context, apiKey string, category string, language string, audioPath string, framePaths []string) (*AnalysisResult, error) {
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
 		return nil, err
