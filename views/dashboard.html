@@ -13,181 +13,344 @@
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
     <div id="app" v-cloak>
-        <!-- Navigation -->
-        <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100">
-            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-                <div class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center">
-                    <i class="fas fa-video mr-2 text-indigo-600"></i>
-                    StreamCoach AI
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button v-if="apiKey" @click="resetApiKey" class="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">
-                        Reset API Key
-                    </button>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Hero Section -->
-        <header class="relative bg-white overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 opacity-50"></div>
-            <div class="container mx-auto px-6 py-24 md:py-32 relative text-center">
-                <span class="inline-block py-1 px-3 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold mb-6 animate-fade-in-up">
-                    Powered by Gemini 3 Flash Preview
-                </span>
-                <h1 class="text-5xl md:text-7xl font-extrabold text-gray-900 mb-8 leading-tight tracking-tight">
-                    Master Your <br/>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Live Stream Sales</span>
-                </h1>
-                <p class="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-                    Get instant, AI-powered feedback on your lighting, audio tone, and sales technique. 
-                    Upload your recording and let StreamCoach audit your performance.
-                </p>
-                <div class="flex justify-center">
-                    <button @click="handleStart" class="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-indigo-600 font-pj rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 hover:bg-indigo-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
-                        Analyze My Stream
-                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-                        <div class="absolute -inset-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 opacity-20 blur-lg group-hover:opacity-40 transition duration-200"></div>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Features -->
-        <section class="bg-white py-24">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why StreamCoach?</h2>
-                    <p class="text-gray-500 text-lg">Comprehensive analysis in three simple steps.</p>
-                </div>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="group bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100">
-                        <div class="bg-indigo-100 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors duration-300">
-                            <i class="fas fa-bolt text-indigo-600 text-2xl group-hover:text-white transition-colors"></i>
+                <!-- Navigation -->
+                <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100">
+                    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                        <div class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center">
+                            <i class="fas fa-video mr-2 text-indigo-600"></i>
+                            StreamCoach AI
                         </div>
-                        <h3 class="text-xl font-bold mb-3 text-gray-900">Lightning Fast</h3>
-                        <p class="text-gray-600 leading-relaxed">Leveraging Gemini 3 Flash Preview to process video and audio inputs in seconds, giving you immediate feedback.</p>
-                    </div>
-                    <div class="group bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100">
-                        <div class="bg-purple-100 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-600 transition-colors duration-300">
-                            <i class="fas fa-eye text-purple-600 text-2xl group-hover:text-white transition-colors"></i>
+                        <div class="flex items-center space-x-4">
+                            <select v-model="currentLang" @change="setLang(currentLang)" class="bg-transparent border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2">
+                                <option value="en">English 🇺🇸</option>
+                                <option value="id">Indonesia 🇮🇩</option>
+                                <option value="es">Español 🇪🇸</option>
+                                <option value="zh">中文 🇨🇳</option>
+                                <option value="ja">日本語 🇯🇵</option>
+                            </select>
+                            <button v-if="apiKey" @click="resetApiKey" class="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">
+                                {{ t.resetKey }}
+                            </button>
                         </div>
-                        <h3 class="text-xl font-bold mb-3 text-gray-900">Multimodal Vision</h3>
-                        <p class="text-gray-600 leading-relaxed">Our AI "sees" your product presentation and "hears" your sales pitch simultaneously for a holistic audit.</p>
                     </div>
-                    <div class="group bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100">
-                        <div class="bg-pink-100 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-pink-600 transition-colors duration-300">
-                            <i class="fas fa-chart-line text-pink-600 text-2xl group-hover:text-white transition-colors"></i>
+                </nav>
+        
+                <!-- Hero Section -->
+                <header class="relative bg-white overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 opacity-50"></div>
+                    <div class="container mx-auto px-6 py-24 md:py-32 relative text-center">
+                        <span class="inline-block py-1 px-3 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold mb-6 animate-fade-in-up">
+                            {{ t.poweredBy }}
+                        </span>
+                        <h1 class="text-5xl md:text-7xl font-extrabold text-gray-900 mb-8 leading-tight tracking-tight">
+                            {{ t.heroTitle }}
+                        </h1>
+                        <p class="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+                            {{ t.heroSubtitle }}
+                        </p>
+                        <div class="flex justify-center">
+                            <button @click="handleStart" class="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-indigo-600 font-pj rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 hover:bg-indigo-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                                {{ t.analyzeBtn }}
+                                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                                <div class="absolute -inset-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 opacity-20 blur-lg group-hover:opacity-40 transition duration-200"></div>
+                            </button>
                         </div>
-                        <h3 class="text-xl font-bold mb-3 text-gray-900">Growth Focused</h3>
-                        <p class="text-gray-600 leading-relaxed">Don't just get a score. Get actionable, timestamped advice on how to improve your next stream.</p>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- FAQ / Security Section -->
-        <section class="bg-gray-50 py-24 border-t border-gray-200">
-            <div class="container mx-auto px-6 max-w-3xl">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
-                    <p class="text-gray-500 text-lg">Transparency about your data and security.</p>
-                </div>
-                
-                <div class="space-y-6">
-                    <!-- Q1 -->
-                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
-                            <i class="fas fa-shield-alt text-green-500 mr-3"></i>
-                            Is my API Key safe? Where is it stored?
-                        </h3>
-                        <p class="text-gray-600 leading-relaxed">
-                            Yes, absolutely. StreamCoach AI follows a <strong>"Bring Your Own Key" (BYOK)</strong> model. 
-                            Your Gemini API Key is stored <strong>locally in your browser's LocalStorage</strong>. 
-                            It is never saved to our database or servers. It is only sent temporarily to Google's servers to authenticate your specific analysis request.
+                </header>
+        
+                <!-- Features -->
+                <section class="bg-white py-24">
+                    <div class="container mx-auto px-6">
+                        <div class="text-center mb-16">
+                            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{{ t.whyTitle }}</h2>
+                            <p class="text-gray-500 text-lg">{{ t.whySubtitle }}</p>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-8">
+                            <div class="group bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100">
+                                <div class="bg-indigo-100 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors duration-300">
+                                    <i class="fas fa-bolt text-indigo-600 text-2xl group-hover:text-white transition-colors"></i>
+                                </div>
+                                <h3 class="text-xl font-bold mb-3 text-gray-900">{{ t.fastTitle }}</h3>
+                                <p class="text-gray-600 leading-relaxed">{{ t.fastDesc }}</p>
+                            </div>
+                            <div class="group bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100">
+                                <div class="bg-purple-100 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-600 transition-colors duration-300">
+                                    <i class="fas fa-eye text-purple-600 text-2xl group-hover:text-white transition-colors"></i>
+                                </div>
+                                <h3 class="text-xl font-bold mb-3 text-gray-900">{{ t.multiTitle }}</h3>
+                                <p class="text-gray-600 leading-relaxed">{{ t.multiDesc }}</p>
+                            </div>
+                            <div class="group bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100">
+                                <div class="bg-pink-100 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-pink-600 transition-colors duration-300">
+                                    <i class="fas fa-chart-line text-pink-600 text-2xl group-hover:text-white transition-colors"></i>
+                                </div>
+                                <h3 class="text-xl font-bold mb-3 text-gray-900">{{ t.growthTitle }}</h3>
+                                <p class="text-gray-600 leading-relaxed">{{ t.growthDesc }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+        
+                <!-- FAQ / Security Section -->
+                <section class="bg-gray-50 py-24 border-t border-gray-200">
+                    <div class="container mx-auto px-6 max-w-3xl">
+                        <div class="text-center mb-16">
+                            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{{ t.faqTitle }}</h2>
+                            <p class="text-gray-500 text-lg">{{ t.faqSubtitle }}</p>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <!-- Q1 -->
+                            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                                <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-shield-alt text-green-500 mr-3"></i>
+                                    {{ t.q1Title }}
+                                </h3>
+                                <p class="text-gray-600 leading-relaxed">
+                                    {{ t.q1Desc }}
+                                </p>
+                            </div>
+        
+                            <!-- Q2 -->
+                            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                                <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-video-slash text-indigo-500 mr-3"></i>
+                                    {{ t.q2Title }}
+                                </h3>
+                                <p class="text-gray-600 leading-relaxed">
+                                    {{ t.q2Desc }}
+                                </p>
+                            </div>
+        
+                            <!-- Q3 -->
+                            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                                <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-money-bill-wave text-yellow-500 mr-3"></i>
+                                    {{ t.q3Title }}
+                                </h3>
+                                <p class="text-gray-600 leading-relaxed">
+                                    {{ t.q3Desc }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+        
+                <!-- API Key Modal -->
+                <div v-if="showModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 px-4 transition-opacity">
+                    <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl transform transition-all scale-100">
+                        <div class="text-center mb-6">
+                            <div class="bg-indigo-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-key text-indigo-600 text-xl"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900">{{ t.modalTitle }}</h2>
+                        </div>
+                        
+                        <p class="text-gray-600 mb-6 text-center text-sm">
+                            {{ t.modalDesc }} <br/>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center mt-2">
+                                {{ t.getKey }} <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+                            </a>
                         </p>
-                    </div>
-
-                    <!-- Q2 -->
-                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
-                            <i class="fas fa-video-slash text-indigo-500 mr-3"></i>
-                            Do you keep my video files?
-                        </h3>
-                        <p class="text-gray-600 leading-relaxed">
-                            No. Your video is uploaded temporarily for processing (extracting audio and frames) and is immediately deleted from our temporary storage once the analysis is complete. We value your privacy and intellectual property.
-                        </p>
-                    </div>
-
-                    <!-- Q3 -->
-                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
-                            <i class="fas fa-money-bill-wave text-yellow-500 mr-3"></i>
-                            Is this free to use?
-                        </h3>
-                        <p class="text-gray-600 leading-relaxed">
-                            The StreamCoach tool itself is free. However, since you use your own Google Gemini API Key, usage will count towards your own quota. Google offers a generous free tier for Gemini Flash, which should cover many hours of analysis.
-                        </p>
+                        
+                        <div class="mb-6 relative">
+                            <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400"></i>
+                            <input 
+                                type="password" 
+                                v-model="tempApiKey" 
+                                placeholder="Paste your API Key here" 
+                                class="w-full border border-gray-200 bg-gray-50 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                            >
+                        </div>
+        
+                        <div class="flex justify-end space-x-3">
+                            <button @click="showModal = false" class="px-6 py-2.5 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 font-medium transition-colors">{{ t.cancel }}</button>
+                            <button @click="saveApiKey" class="bg-indigo-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/30 transition-all transform hover:-translate-y-0.5">{{ t.save }}</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
-
-
-        <!-- API Key Modal -->
-        <div v-if="showModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 px-4 transition-opacity">
-            <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl transform transition-all scale-100">
-                <div class="text-center mb-6">
-                    <div class="bg-indigo-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-key text-indigo-600 text-xl"></i>
+        
+                <!-- Footer -->
+                <footer class="bg-gray-900 text-white py-12">
+                    <div class="container mx-auto px-6 text-center">
+                        <p>{{ t.footer }}</p>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-900">Enter Gemini API Key</h2>
-                </div>
-                
-                <p class="text-gray-600 mb-6 text-center text-sm">
-                    Your key is stored locally in your browser. <br/>
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center mt-2">
-                        Get your free key here <i class="fas fa-external-link-alt ml-1 text-xs"></i>
-                    </a>
-                </p>
-                
-                <div class="mb-6 relative">
-                    <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400"></i>
-                    <input 
-                        type="password" 
-                        v-model="tempApiKey" 
-                        placeholder="Paste your API Key here" 
-                        class="w-full border border-gray-200 bg-gray-50 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
-                    >
-                </div>
-
-                <div class="flex justify-end space-x-3">
-                    <button @click="showModal = false" class="px-6 py-2.5 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 font-medium transition-colors">Cancel</button>
-                    <button @click="saveApiKey" class="bg-indigo-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/30 transition-all transform hover:-translate-y-0.5">Save Key</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <footer class="bg-gray-900 text-white py-12">
-            <div class="container mx-auto px-6 text-center">
-                <p>&copy; 2026 StreamCoach AI. Built for the Gemini Hackathon.</p>
-            </div>
-        </footer>
+                </footer>
+        
     </div>
 
     <script>
-        const { createApp, ref, onMounted } = Vue;
+        const { createApp, ref, onMounted, computed } = Vue;
+
+        const translations = {
+            en: {
+                resetKey: "Reset API Key",
+                poweredBy: "Powered by Gemini 3 Flash Preview",
+                heroTitle: "Master Your Live Stream Sales",
+                heroSubtitle: "Get instant, AI-powered feedback on your lighting, audio tone, and sales technique. Upload your recording and let StreamCoach audit your performance.",
+                analyzeBtn: "Analyze My Stream",
+                whyTitle: "Why StreamCoach?",
+                whySubtitle: "Comprehensive analysis in three simple steps.",
+                fastTitle: "Lightning Fast",
+                fastDesc: "Leveraging Gemini 3 Flash Preview to process video and audio inputs in seconds, giving you immediate feedback.",
+                multiTitle: "Multimodal Vision",
+                multiDesc: "Our AI 'sees' your product presentation and 'hears' your sales pitch simultaneously for a holistic audit.",
+                growthTitle: "Growth Focused",
+                growthDesc: "Don't just get a score. Get actionable, timestamped advice on how to improve your next stream.",
+                faqTitle: "Frequently Asked Questions",
+                faqSubtitle: "Transparency about your data and security.",
+                q1Title: "Is my API Key safe? Where is it stored?",
+                q1Desc: "Yes, absolutely. StreamCoach AI follows a 'Bring Your Own Key' (BYOK) model. Your Gemini API Key is stored locally in your browser's LocalStorage. It is never saved to our database or servers.",
+                q2Title: "Do you keep my video files?",
+                q2Desc: "No. Your video is uploaded temporarily for processing and is immediately deleted from our servers once the analysis is complete.",
+                q3Title: "Is this free to use?",
+                q3Desc: "The tool is free, but it uses your own Google Gemini API Key quota.",
+                modalTitle: "Enter Gemini API Key",
+                modalDesc: "Your key is stored locally in your browser.",
+                getKey: "Get your free key here",
+                cancel: "Cancel",
+                save: "Save Key",
+                footer: "© 2026 StreamCoach AI. Built for the Gemini Hackathon."
+            },
+            id: {
+                resetKey: "Reset API Key",
+                poweredBy: "Didukung oleh Gemini 3 Flash Preview",
+                heroTitle: "Kuasai Penjualan Live Stream Anda",
+                heroSubtitle: "Dapatkan umpan balik instan berbasis AI tentang pencahayaan, nada audio, dan teknik penjualan Anda. Unggah rekaman Anda dan biarkan StreamCoach mengaudit performa Anda.",
+                analyzeBtn: "Analisis Stream Saya",
+                whyTitle: "Mengapa StreamCoach?",
+                whySubtitle: "Analisis komprehensif dalam tiga langkah sederhana.",
+                fastTitle: "Super Cepat",
+                fastDesc: "Memanfaatkan Gemini 3 Flash Preview untuk memproses video dan audio dalam hitungan detik, memberikan umpan balik segera.",
+                multiTitle: "Visi Multimodal",
+                multiDesc: "AI kami 'melihat' presentasi produk Anda dan 'mendengar' nada penjualan Anda secara bersamaan untuk audit menyeluruh.",
+                growthTitle: "Fokus Pertumbuhan",
+                growthDesc: "Jangan hanya dapat skor. Dapatkan saran yang dapat ditindaklanjuti beserta stempel waktu untuk meningkatkan stream berikutnya.",
+                faqTitle: "Pertanyaan Umum",
+                faqSubtitle: "Transparansi tentang data dan keamanan Anda.",
+                q1Title: "Apakah API Key saya aman? Di mana disimpannya?",
+                q1Desc: "Ya, sangat aman. StreamCoach AI menggunakan model 'Bawa Kunci Sendiri' (BYOK). Kunci API Gemini Anda disimpan secara lokal di LocalStorage browser Anda. Tidak pernah disimpan di server kami.",
+                q2Title: "Apakah Anda menyimpan file video saya?",
+                q2Desc: "Tidak. Video Anda diunggah sementara untuk diproses dan segera dihapus dari server kami setelah analisis selesai.",
+                q3Title: "Apakah ini gratis?",
+                q3Desc: "Alat ini gratis, tetapi menggunakan kuota API Key Google Gemini milik Anda sendiri.",
+                modalTitle: "Masukkan Gemini API Key",
+                modalDesc: "Kunci Anda disimpan secara lokal di browser.",
+                getKey: "Dapatkan kunci gratis di sini",
+                cancel: "Batal",
+                save: "Simpan Kunci",
+                footer: "© 2026 StreamCoach AI. Dibuat untuk Gemini Hackathon."
+            },
+            es: {
+                resetKey: "Restablecer Clave API",
+                poweredBy: "Impulsado por Gemini 3 Flash Preview",
+                heroTitle: "Domina tus Ventas en Vivo",
+                heroSubtitle: "Obtén comentarios instantáneos impulsados por IA sobre tu iluminación, tono de audio y técnica de ventas. Sube tu grabación y deja que StreamCoach audite tu rendimiento.",
+                analyzeBtn: "Analizar mi Stream",
+                whyTitle: "¿Por qué StreamCoach?",
+                whySubtitle: "Análisis integral en tres pasos simples.",
+                fastTitle: "Súper Rápido",
+                fastDesc: "Aprovechando Gemini 3 Flash Preview para procesar video y audio en segundos.",
+                multiTitle: "Visión Multimodal",
+                multiDesc: "Nuestra IA 've' tu presentación y 'escucha' tu tono simultáneamente.",
+                growthTitle: "Enfocado en Crecimiento",
+                growthDesc: "Recibe consejos prácticos con marcas de tiempo para mejorar.",
+                faqTitle: "Preguntas Frecuentes",
+                faqSubtitle: "Transparencia sobre tus datos y seguridad.",
+                q1Title: "¿Es segura mi Clave API?",
+                q1Desc: "Sí. Se almacena localmente en tu navegador, nunca en nuestros servidores.",
+                q2Title: "¿Guardan mis videos?",
+                q2Desc: "No. Se eliminan inmediatamente después del análisis.",
+                q3Title: "¿Es gratis?",
+                q3Desc: "La herramienta es gratuita, pero usa tu propia cuota de Gemini.",
+                modalTitle: "Ingresar Clave API Gemini",
+                modalDesc: "Tu clave se guarda localmente.",
+                getKey: "Obtén tu clave gratis aquí",
+                cancel: "Cancelar",
+                save: "Guardar Clave",
+                footer: "© 2026 StreamCoach AI. Creado para el Gemini Hackathon."
+            },
+            zh: {
+                resetKey: "重置 API 密钥",
+                poweredBy: "由 Gemini 3 Flash Preview 提供支持",
+                heroTitle: "掌握您的直播销售",
+                heroSubtitle: "获得关于灯光、音频语调和销售技巧的即时 AI 反馈。上传您的录音，让 StreamCoach 审核您的表现。",
+                analyzeBtn: "分析我的直播",
+                whyTitle: "为什么选择 StreamCoach？",
+                whySubtitle: "只需三个简单步骤即可进行全面分析。",
+                fastTitle: "闪电般快速",
+                fastDesc: "利用 Gemini 3 Flash Preview 在几秒钟内处理视频和音频。",
+                multiTitle: "多模态视觉",
+                multiDesc: "我们的 AI 同时“观看”您的产品展示并“聆听”您的销售语调。",
+                growthTitle: "以增长为核心",
+                growthDesc: "不仅仅是一个分数。获得可操作的时间戳建议。",
+                faqTitle: "常见问题",
+                faqSubtitle: "关于您的数据和安全性的透明度。",
+                q1Title: "我的 API 密钥安全吗？",
+                q1Desc: "是的。它存储在您的浏览器本地，绝不会保存在我们的服务器上。",
+                q2Title: "你们会保存我的视频文件吗？",
+                q2Desc: "不会。分析完成后立即删除。",
+                q3Title: "这是免费的吗？",
+                q3Desc: "工具是免费的，但使用您自己的 Gemini API 配额。",
+                modalTitle: "输入 Gemini API 密钥",
+                modalDesc: "您的密钥存储在本地。",
+                getKey: "在此处获取免费密钥",
+                cancel: "取消",
+                save: "保存密钥",
+                footer: "© 2026 StreamCoach AI. 为 Gemini Hackathon 构建。"
+            },
+            ja: {
+                resetKey: "APIキーをリセット",
+                poweredBy: "Gemini 3 Flash Preview 搭載",
+                heroTitle: "ライブコマースを極める",
+                heroSubtitle: "照明、音声トーン、販売テクニックに関するAIによる即時フィードバックを取得します。",
+                analyzeBtn: "ストリームを分析",
+                whyTitle: "StreamCoachを選ぶ理由",
+                whySubtitle: "3つの簡単なステップで包括的な分析。",
+                fastTitle: "超高速",
+                fastDesc: "Gemini 3 Flash Previewを活用して数秒で処理します。",
+                multiTitle: "マルチモーダルビジョン",
+                multiDesc: "AIが製品プレゼンテーションを「見て」、セールストークを「聞き」ます。",
+                growthTitle: "成長重視",
+                growthDesc: "単なるスコアではありません。具体的な改善アドバイスを提供します。",
+                faqTitle: "よくある質問",
+                faqSubtitle: "データとセキュリティに関する透明性。",
+                q1Title: "APIキーは安全ですか？",
+                q1Desc: "はい。ブラウザのローカルストレージに保存され、サーバーには保存されません。",
+                q2Title: "動画は保存されますか？",
+                q2Desc: "いいえ。分析完了後に即座に削除されます。",
+                q3Title: "無料ですか？",
+                q3Desc: "ツールは無料ですが、ご自身のGemini APIクォータを使用します。",
+                modalTitle: "Gemini APIキーを入力",
+                modalDesc: "キーはローカルに保存されます。",
+                getKey: "ここで無料キーを取得",
+                cancel: "キャンセル",
+                save: "キーを保存",
+                footer: "© 2026 StreamCoach AI. Gemini Hackathonのために作成されました。"
+            }
+        };
 
         createApp({
             setup() {
                 const apiKey = ref('');
                 const tempApiKey = ref('');
                 const showModal = ref(false);
+                const currentLang = ref('en');
 
                 onMounted(() => {
                     apiKey.value = localStorage.getItem('gemini_api_key') || '';
+                    const savedLang = localStorage.getItem('app_lang');
+                    if (savedLang && translations[savedLang]) {
+                        currentLang.value = savedLang;
+                    }
                 });
+
+                const t = computed(() => translations[currentLang.value]);
+
+                const setLang = (lang) => {
+                    currentLang.value = lang;
+                    localStorage.setItem('app_lang', lang);
+                };
 
                 const handleStart = () => {
                     if (!apiKey.value) {
@@ -219,7 +382,10 @@
                     showModal,
                     handleStart,
                     saveApiKey,
-                    resetApiKey
+                    resetApiKey,
+                    t,
+                    currentLang,
+                    setLang
                 };
             }
         }).mount('#app');

@@ -46,46 +46,93 @@ func AnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	apiKey := r.FormValue("apiKey")
-	category := r.FormValue("category")
+		apiKey := r.FormValue("apiKey")
 
-	if apiKey == "" || category == "" {
-		http.Error(w, "API Key and Category are required", http.StatusBadRequest)
-		return
-	}
+		category := r.FormValue("category")
 
-	// 2. Save uploaded file
-	tempPath := filepath.Join("uploads", header.Filename)
-	dst, err := os.Create(tempPath)
-	if err != nil {
-		http.Error(w, "Internal server error saving file", http.StatusInternalServerError)
-		return
-	}
+		language := r.FormValue("language")
 
-	if _, err := io.Copy(dst, file); err != nil {
-		dst.Close() // Close on error
-		http.Error(w, "Internal server error saving file", http.StatusInternalServerError)
-		return
-	}
-	dst.Close() // Close immediately to release file lock for FFmpeg/Deletion
+		if language == "" {
 
-	// 3. Process Video (FFmpeg)
-	processResult, err := video.ProcessVideo(tempPath, "uploads")
-	if err != nil {
-		os.Remove(tempPath) // Clean up the original video on error
-		http.Error(w, "Error processing video: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+			language = "English"
+
+		}
+
 	
-	// Delete original video immediately after processing as it's no longer needed
-	os.Remove(tempPath)
 
-	// Prepare job directory for cleanup after AI analysis
-	jobDir := filepath.Dir(processResult.AudioPath)
-	defer os.RemoveAll(jobDir) // Ensures audio and frames are deleted when handler returns
+		if apiKey == "" || category == "" {
 
-	// 4. Call Gemini AI
-	analysis, err := ai.AnalyzeStream(apiKey, category, processResult.AudioPath, processResult.FramePaths)
+			http.Error(w, "API Key and Category are required", http.StatusBadRequest)
+
+			return
+
+		}
+
+	
+
+		// 2. Save uploaded file
+
+		tempPath := filepath.Join("uploads", header.Filename)
+
+		dst, err := os.Create(tempPath)
+
+		if err != nil {
+
+			http.Error(w, "Internal server error saving file", http.StatusInternalServerError)
+
+			return
+
+		}
+
+		if _, err := io.Copy(dst, file); err != nil {
+
+			dst.Close() // Close on error
+
+			http.Error(w, "Internal server error saving file", http.StatusInternalServerError)
+
+			return
+
+		}
+
+		dst.Close() // Close immediately to release file lock for FFmpeg/Deletion
+
+	
+
+		// 3. Process Video (FFmpeg)
+
+		processResult, err := video.ProcessVideo(tempPath, "uploads")
+
+		if err != nil {
+
+			os.Remove(tempPath) // Clean up the original video on error
+
+			http.Error(w, "Error processing video: "+err.Error(), http.StatusInternalServerError)
+
+			return
+
+		}
+
+		
+
+		// Delete original video immediately after processing as it's no longer needed
+
+		os.Remove(tempPath)
+
+	
+
+		// Prepare job directory for cleanup after AI analysis
+
+		jobDir := filepath.Dir(processResult.AudioPath)
+
+		defer os.RemoveAll(jobDir) // Ensures audio and frames are deleted when handler returns
+
+	
+
+		// 4. Call Gemini AI
+
+		analysis, err := ai.AnalyzeStream(apiKey, category, language, processResult.AudioPath, processResult.FramePaths)
+
+	
 	if err != nil {
 		http.Error(w, "AI Analysis failed: "+err.Error(), http.StatusInternalServerError)
 		return

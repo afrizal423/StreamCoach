@@ -29,7 +29,7 @@ type Flag struct {
 }
 
 // AnalyzeStream calls Gemini 3 Flash Preview with the multimodal data
-func AnalyzeStream(apiKey string, category string, audioPath string, framePaths []string) (*AnalysisResult, error) {
+func AnalyzeStream(apiKey string, category string, language string, audioPath string, framePaths []string) (*AnalysisResult, error) {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
@@ -48,6 +48,7 @@ func AnalyzeStream(apiKey string, category string, audioPath string, framePaths 
 	instruction := fmt.Sprintf(`Role: You are a professional Live Stream Audit Consultant.
 Context: The user is conducting a live stream in the %s category.
 Data: I am providing the FULL AUDIO from the session and several sampled IMAGE FRAMES from the video (sampled every 10 seconds).
+Output Language: %s.
 
 Task:
 1. Analyze the AUDIO for tone, enthusiasm, articulation, and sales persuasiveness.
@@ -55,7 +56,8 @@ Task:
 3. Provide an objective Overall Score (0-100).
 4. Identify specific moments (timestamps) where issues occurred (e.g., blur, dead air, low energy). Use the frame sequence to estimate time (Frame 1 is ~0s, Frame 2 is ~10s, etc.).
 
-Constraint: Output MUST be in JSON format with the following structure:
+Constraint: Output MUST be in JSON format with the following structure. 
+IMPORTANT: All text values within the JSON (summary, strengths, weaknesses, tips, issues) MUST be written in %s language:
 {
   "overall_score": 78,
   "summary_reasoning": "...",
@@ -65,7 +67,7 @@ Constraint: Output MUST be in JSON format with the following structure:
     {"time": "00:15", "issue": "Audio noise/Dead air", "severity": "medium"}
   ],
   "improvement_tips": "..."
-}`, category)
+}`, category, language, language)
 
 	prompt = append(prompt, genai.Text(instruction))
 
