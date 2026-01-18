@@ -7,7 +7,7 @@
 *   **Speed & Cost:** Utilizes Gemini 3 Flash Preview for low-latency analysis.
 *   **Multimodal:** Assesses performance based on Visuals (Video Frames) and Audio (Tone/Vocal).
 *   **Global Reach:** Fully localized (i18n) for EN, ID, ES, ZH, and JA.
-*   **Scalable Architecture:** Implements a Smart Queue system (Local/Redis) to manage server load.
+*   **Scalable Architecture:** Implements a Smart **Async Job Queue** (Local/Redis) to manage server load.
 *   **User-Owned API Key:** BYOK model ensures privacy and scalability.
 
 ---
@@ -18,6 +18,7 @@
 *   **Language:** Go (Golang).
 *   **Concurrency:**
     *   **Queue:** `internal/queue` package supporting In-Memory (Channel) or Redis (List/BLPOP).
+    *   **Job Management:** `internal/job` for thread-safe state tracking.
     *   **Resource Management:** Context-aware cancellation (kills FFmpeg/AI request on disconnect).
 *   **Video Processing:** `FFmpeg` (executed via `os/exec` with context).
 *   **AI Integration:** Google GenAI SDK for Go.
@@ -36,7 +37,8 @@
 ### Route Structure
 1.  **GET /** (`DashboardHandler`) - Landing Page with i18n support.
 2.  **GET /app** (`AppHandler`) - Main Analysis Interface.
-3.  **POST /api/analyze** (`AnalyzeHandler`) - Handles upload, queueing, processing, and AI.
+3.  **POST /api/upload** (`UploadHandler`) - Initiates async job, returns `jobId`.
+4.  **GET /api/status** (`StatusHandler`) - Polls job status (`?id=uuid`).
 
 ---
 
@@ -49,13 +51,23 @@
 ### B. Application (`/app`)
 *   **Inputs:** File Upload (Max 1GB), Category, Language.
 *   **Validation:** Client-side check for >1GB files using SweetAlert2.
-*   **Queueing:** If server is busy (>2 tasks), user sees a loading state while waiting in queue.
+*   **Process:**
+    1.  User clicks Analyze -> File uploaded to `/api/upload`.
+    2.  Server returns `jobId`.
+    3.  Frontend polls `/api/status?id=...` every 2s.
+    4.  **Status "queued":** UI shows "Waiting in queue..."
+    5.  **Status "processing":** UI shows "Gemini is analyzing..."
+    6.  **Status "completed":** UI shows results.
 
 ### C. Backend Processing (Go)
-1.  **Queue Acquisition:** Wait for slot (Redis/Local).
-2.  **FFmpeg:** Extract audio and frames (with context cancellation).
-3.  **Gemini AI:** Analyze using Multimodal Prompt in the requested language.
-4.  **Cleanup:** Immediate deletion of all temp files.
+1.  **UploadHandler:** Saves file, creates Job Record, spawns Goroutine.
+2.  **Async Worker:**
+    *   **Queue Acquisition:** Wait for slot (Redis/Local).
+    *   **Update Job Status:** Set to `processing`.
+    *   **FFmpeg:** Extract audio/frames (cancellable).
+    *   **Gemini AI:** Analyze using Multimodal Prompt.
+    *   **Update Job Status:** Set to `completed` with JSON result.
+3.  **Cleanup:** Immediate deletion of all temp files.
 
 ---
 
@@ -99,6 +111,7 @@ Constraint: Output MUST be in JSON format. All text values MUST be in [LANGUAGE_
 - **JSON Parsing Fix** (Handle Array/Object).
 
 ### ✅ Phase 4: Reliability & Scale
+- **Async Job System:** Polling architecture for better UX.
 - **Queue System:** Local & Redis support.
 - **Large File Support:** 1GB limit enforced.
 - **Resource Conservation:** Context cancellation on disconnect.

@@ -12,7 +12,8 @@ StreamCoach AI is a powerful web application designed to automatically analyze t
 
 *   **Multimodal Analysis**: "Sees" your product presentation (lighting, clarity, gestures) and "hears" your sales pitch (tone, enthusiasm, pacing) simultaneously.
 *   **Internationalization (i18n)**: Fully localized UI and AI responses in **English, Indonesian, Spanish, Chinese, and Japanese**.
-*   **Smart Queue System**: Protects the server from overload. Supports **Local (In-Memory)** and **Production (Redis)** queuing modes to limit concurrent analysis tasks.
+*   **Smart Async Queue**: Protects the server from overload. Implements a robust **Job System** with **Polling** to provide real-time status updates (Queued, Processing, Completed) to the user.
+*   **Scalable Concurrency**: Supports **Local (In-Memory)** and **Production (Redis)** queuing modes to strictly limit concurrent heavy tasks.
 *   **Large File Support**: Optimized handling for video uploads up to **1GB**.
 *   **Resource Efficiency**: Automatically cancels heavy processing (FFmpeg & AI) if the user disconnects, saving server resources and API quota.
 *   **Timeline Analysis**: Identifies specific moments (timestamped flags) where issues occurred.
@@ -28,7 +29,9 @@ StreamCoach AI is a powerful web application designed to automatically analyze t
 *   **Backend**: Go (Golang)
 *   **AI Engine**: Google GenAI SDK (Gemini 3 Flash Preview)
 *   **Video Processing**: FFmpeg (Frame extraction & Audio separation)
-*   **Queue/Concurrency**: Native Channels (Local) / Redis (Production)
+*   **Concurrency**: 
+    *   **Queue**: Native Channels (Local) / Redis (Production)
+    *   **Job Management**: Async polling architecture (UUID based)
 *   **Frontend**: Vue.js 3 (Composition API)
 *   **Styling**: Tailwind CSS
 *   **Alerts**: SweetAlert2

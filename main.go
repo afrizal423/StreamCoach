@@ -28,7 +28,8 @@ func main() {
 	// Routes
 	http.HandleFunc("/", handlers.DashboardHandler)
 	http.HandleFunc("/app", handlers.AppHandler)
-	http.HandleFunc("/api/analyze", handlers.AnalyzeHandler)
+	http.HandleFunc("/api/upload", handlers.UploadHandler)
+	http.HandleFunc("/api/status", handlers.StatusHandler)
 
 	log.Println("Server starting on :8080...")
 	err = http.ListenAndServe(":8080", nil)

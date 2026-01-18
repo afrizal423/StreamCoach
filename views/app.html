@@ -256,8 +256,10 @@
                 analyzingTitle: "Analyzing Performance",
                 analyzingDesc: "Gemini is watching and listening to your stream...",
                 uploading: "Uploading video...",
+                queued: "Waiting in queue... (Server busy)",
+                processing: "Processing video...",
                 extracting: "Extracting audio and frames...",
-                processing: "Gemini is analyzing your performance...",
+                gemini: "Gemini is analyzing your performance...",
                 complete: "Complete",
                 score: "Score",
                 execSummary: "Executive Summary",
@@ -300,8 +302,10 @@
                 analyzingTitle: "Menganalisis Performa",
                 analyzingDesc: "Gemini sedang menonton dan mendengarkan stream Anda...",
                 uploading: "Mengunggah video...",
+                queued: "Menunggu antrian... (Server sibuk)",
+                processing: "Memproses video...",
                 extracting: "Mengekstrak audio dan frame...",
-                processing: "Gemini sedang menganalisis performa Anda...",
+                gemini: "Gemini sedang menganalisis performa Anda...",
                 complete: "Selesai",
                 score: "Skor",
                 execSummary: "Ringkasan Eksekutif",
@@ -344,8 +348,10 @@
                 analyzingTitle: "Analizando Rendimiento",
                 analyzingDesc: "Gemini está viendo y escuchando tu stream...",
                 uploading: "Subiendo video...",
+                queued: "Esperando en cola... (Servidor ocupado)",
+                processing: "Procesando video...",
                 extracting: "Extrayendo audio y fotogramas...",
-                processing: "Gemini está analizando tu rendimiento...",
+                gemini: "Gemini está analizando tu rendimiento...",
                 complete: "Completado",
                 score: "Puntaje",
                 execSummary: "Resumen Ejecutivo",
@@ -388,8 +394,10 @@
                 analyzingTitle: "分析表现",
                 analyzingDesc: "Gemini 正在观看和收听您的直播...",
                 uploading: "正在上传视频...",
+                queued: "排队中... (服务器繁忙)",
+                processing: "正在处理视频...",
                 extracting: "正在提取音频和帧...",
-                processing: "Gemini 正在分析您的表现...",
+                gemini: "Gemini 正在分析您的表现...",
                 complete: "完成",
                 score: "分数",
                 execSummary: "执行摘要",
@@ -432,8 +440,10 @@
                 analyzingTitle: "パフォーマンス分析中",
                 analyzingDesc: "Geminiがストリームを視聴しています...",
                 uploading: "動画をアップロード中...",
+                queued: "順番待ち中... (サーバー混雑)",
+                processing: "動画を処理中...",
                 extracting: "音声とフレームを抽出中...",
-                processing: "Geminiがパフォーマンスを分析中...",
+                gemini: "Geminiがパフォーマンスを分析中...",
                 complete: "完了",
                 score: "スコア",
                 execSummary: "エグゼクティブサマリー",
@@ -509,40 +519,66 @@
                     }
 
                     loading.value = true;
-                    progress.value = 10;
+                    progress.value = 5;
                     loadingText.value = t.value.uploading;
 
                     const formData = new FormData();
                     formData.append('video', file.value);
                     formData.append('apiKey', apiKey.value);
                     formData.append('category', category.value);
-                    formData.append('language', currentLang.value); // Send selected language
+                    formData.append('language', currentLang.value);
 
                     try {
-                        // Simulate progress while waiting for backend
-                        const progressInterval = setInterval(() => {
-                            if (progress.value < 90) {
-                                progress.value += 2;
-                                if (progress.value > 40) loadingText.value = t.value.extracting;
-                                if (progress.value > 70) loadingText.value = t.value.processing;
-                            }
-                        }, 500);
-
-                        const response = await fetch('/api/analyze', {
+                        // 1. Upload File
+                        const uploadResp = await fetch('/api/upload', {
                             method: 'POST',
                             body: formData
                         });
 
-                        clearInterval(progressInterval);
-                        
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(errorText || 'Analysis failed');
+                        if (!uploadResp.ok) {
+                            const errorText = await uploadResp.text();
+                            throw new Error(errorText || 'Upload failed');
                         }
 
-                        progress.value = 100;
-                        result.value = await response.json();
-                        loading.value = false;
+                        const { jobId } = await uploadResp.json();
+                        progress.value = 20;
+                        loadingText.value = t.value.queued; // Initial state
+
+                        // 2. Poll Status
+                        const pollInterval = setInterval(async () => {
+                            try {
+                                const statusResp = await fetch(`/api/status?id=${jobId}`);
+                                if (!statusResp.ok) return; // Retry next time
+
+                                const job = await statusResp.json();
+
+                                if (job.status === 'queued') {
+                                    loadingText.value = t.value.queued;
+                                    progress.value = 25; // Stuck at 25 while queued
+                                } else if (job.status === 'processing') {
+                                    // Simulate visual progress for processing
+                                    if (progress.value < 90) progress.value += 2;
+                                    loadingText.value = t.value.gemini;
+                                } else if (job.status === 'completed') {
+                                    clearInterval(pollInterval);
+                                    progress.value = 100;
+                                    result.value = job.result;
+                                    loading.value = false;
+                                } else if (job.status === 'failed') {
+                                    clearInterval(pollInterval);
+                                    throw new Error(job.error || 'Analysis failed');
+                                }
+                            } catch (err) {
+                                clearInterval(pollInterval);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: t.value.errorTitle,
+                                    text: err.message,
+                                });
+                                loading.value = false;
+                            }
+                        }, 2000);
+
                     } catch (error) {
                         Swal.fire({
                             icon: 'error',
