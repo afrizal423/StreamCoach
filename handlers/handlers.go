@@ -32,10 +32,13 @@ func AnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. Parse Multipart Form
-	// Max 50MB
-	err := r.ParseMultipartForm(50 << 20)
+	// Limit request body size to 1GB (1 << 30)
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<30)
+	
+	// ParseMultipartForm maxMemory determines how much is stored in memory vs disk.
+	err := r.ParseMultipartForm(1<<30)
 	if err != nil {
-		http.Error(w, "File too large or invalid form", http.StatusBadRequest)
+		http.Error(w, "File too large (Max 1GB) or invalid form", http.StatusBadRequest)
 		return
 	}
 

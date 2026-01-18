@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         [v-cloak] { display: none; }
@@ -249,7 +250,7 @@
                 catEducation: "Education / Tutorial",
                 dragDrop: "Drag & Drop your video here",
                 browse: "or click to browse files",
-                fileSupport: "Supports MP4, MOV, AVI (Max 50MB)",
+                fileSupport: "Supports MP4, MOV, AVI (Max 1GB)",
                 ready: "Ready to Upload",
                 analyzeBtn: "Analyze Stream",
                 analyzingTitle: "Analyzing Performance",
@@ -267,6 +268,8 @@
                 coachAdvice: "Coach's Top Advice",
                 analyzeAnother: "Analyze Another Video",
                 downloadPDF: "Download Report (PDF)",
+                fileTooLarge: "File too large. Maximum size is 1GB.",
+                errorTitle: "Oops...",
                 pdfTitle: "StreamCoach AI Analysis Report",
                 pdfGenerated: "Generated on",
                 pdfSummary: "Summary",
@@ -285,13 +288,13 @@
                 uploadDesc: "Unggah rekaman stream Anda untuk memulai.",
                 categoryLabel: "Kategori Stream",
                 catJewelry: "Perhiasan & Aksesoris",
-                catFashion: "Mode & Pakaian",
+                catFashion: "Fashion & Pakaian",
                 catSales: "Penjualan Umum",
                 catGaming: "Gaming / E-sports",
                 catEducation: "Pendidikan / Tutorial",
                 dragDrop: "Seret & Lepas video Anda di sini",
                 browse: "atau klik untuk mencari file",
-                fileSupport: "Mendukung MP4, MOV, AVI (Maks 50MB)",
+                fileSupport: "Mendukung MP4, MOV, AVI (Maks 1GB)",
                 ready: "Siap Diunggah",
                 analyzeBtn: "Analisis Stream",
                 analyzingTitle: "Menganalisis Performa",
@@ -309,6 +312,8 @@
                 coachAdvice: "Saran Utama Pelatih",
                 analyzeAnother: "Analisis Video Lain",
                 downloadPDF: "Unduh Laporan (PDF)",
+                fileTooLarge: "File terlalu besar. Ukuran maksimal adalah 1GB.",
+                errorTitle: "Ups...",
                 pdfTitle: "Laporan Analisis StreamCoach AI",
                 pdfGenerated: "Dibuat pada",
                 pdfSummary: "Ringkasan",
@@ -333,7 +338,7 @@
                 catEducation: "Educación / Tutorial",
                 dragDrop: "Arrastra y suelta tu video aquí",
                 browse: "o haz clic para buscar archivos",
-                fileSupport: "Soporta MP4, MOV, AVI (Max 50MB)",
+                fileSupport: "Soporta MP4, MOV, AVI (Max 1GB)",
                 ready: "Listo para subir",
                 analyzeBtn: "Analizar Stream",
                 analyzingTitle: "Analizando Rendimiento",
@@ -351,6 +356,8 @@
                 coachAdvice: "Consejo Principal del Coach",
                 analyzeAnother: "Analizar Otro Video",
                 downloadPDF: "Descargar Reporte (PDF)",
+                fileTooLarge: "Archivo demasiado grande. El tamaño máximo es 1GB.",
+                errorTitle: "Ups...",
                 pdfTitle: "Reporte de Análisis StreamCoach AI",
                 pdfGenerated: "Generado el",
                 pdfSummary: "Resumen",
@@ -375,7 +382,7 @@
                 catEducation: "教育 / 教程",
                 dragDrop: "将视频拖放到此处",
                 browse: "或点击浏览文件",
-                fileSupport: "支持 MP4, MOV, AVI (最大 50MB)",
+                fileSupport: "支持 MP4, MOV, AVI (最大 1GB)",
                 ready: "准备上传",
                 analyzeBtn: "分析直播",
                 analyzingTitle: "分析表现",
@@ -393,6 +400,8 @@
                 coachAdvice: "教练的主要建议",
                 analyzeAnother: "分析另一个视频",
                 downloadPDF: "下载报告 (PDF)",
+                fileTooLarge: "文件太大。最大限制为 1GB。",
+                errorTitle: "糟糕...",
                 pdfTitle: "StreamCoach AI 分析报告",
                 pdfGenerated: "生成于",
                 pdfSummary: "摘要",
@@ -417,7 +426,7 @@
                 catEducation: "教育 / チュートリアル",
                 dragDrop: "ここに動画をドラッグ＆ドロップ",
                 browse: "またはクリックしてファイルを参照",
-                fileSupport: "MP4, MOV, AVI 対応 (最大 50MB)",
+                fileSupport: "MP4, MOV, AVI 対応 (最大 1GB)",
                 ready: "アップロード準備完了",
                 analyzeBtn: "ストリームを分析",
                 analyzingTitle: "パフォーマンス分析中",
@@ -435,6 +444,8 @@
                 coachAdvice: "コーチからのトップアドバイス",
                 analyzeAnother: "別の動画を分析",
                 downloadPDF: "レポートをダウンロード (PDF)",
+                fileTooLarge: "ファイルが大きすぎます。最大サイズは1GBです。",
+                errorTitle: "おっと...",
                 pdfTitle: "StreamCoach AI 分析レポート",
                 pdfGenerated: "作成日",
                 pdfSummary: "サマリー",
@@ -487,6 +498,16 @@
                 };
 
                 const startAnalysis = async () => {
+                    // Check file size (1GB limit)
+                    if (file.value && file.value.size > 1 * 1024 * 1024 * 1024) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: t.value.errorTitle,
+                            text: t.value.fileTooLarge,
+                        });
+                        return;
+                    }
+
                     loading.value = true;
                     progress.value = 10;
                     loadingText.value = t.value.uploading;
@@ -514,13 +535,20 @@
 
                         clearInterval(progressInterval);
                         
-                        if (!response.ok) throw new Error('Analysis failed');
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(errorText || 'Analysis failed');
+                        }
 
                         progress.value = 100;
                         result.value = await response.json();
                         loading.value = false;
                     } catch (error) {
-                        alert('Error: ' + error.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: t.value.errorTitle,
+                            text: error.message,
+                        });
                         loading.value = false;
                     }
                 };
