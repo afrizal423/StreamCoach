@@ -24,21 +24,21 @@
             <div class="container mx-auto px-6 py-4 flex justify-between items-center">
                 <a href="/" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center">
                     <i class="fas fa-video mr-2 text-indigo-600"></i>
-                    StreamCoach AI
+                    <span class="hidden sm:inline">StreamCoach AI</span>
                 </a>
-                <div class="flex items-center space-x-4">
-                    <select v-model="currentLang" @change="setLang(currentLang)" class="bg-transparent border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2">
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <select v-model="currentLang" @change="setLang(currentLang)" class="bg-transparent border border-gray-300 text-gray-700 text-xs sm:text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-1.5 sm:p-2">
                         <option value="en">English 🇺🇸</option>
                         <option value="id">Indonesia 🇮🇩</option>
                         <option value="es">Español 🇪🇸</option>
                         <option value="zh">中文 🇨🇳</option>
                         <option value="ja">日本語 🇯🇵</option>
                     </select>
-                    <div class="flex items-center bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                        <span class="text-xs font-semibold text-green-700">{{ t.apiKeyActive }}</span>
+                    <div class="flex items-center bg-green-50 px-2 sm:px-3 py-1 rounded-full border border-green-100">
+                        <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1.5 sm:mr-2 animate-pulse"></div>
+                        <span class="text-[10px] sm:text-xs font-semibold text-green-700 whitespace-nowrap">{{ t.apiKeyActive }}</span>
                     </div>
-                    <button @click="logout" class="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">{{ t.logout }}</button>
+                    <button @click="logout" class="text-xs sm:text-sm font-medium text-gray-500 hover:text-red-600 transition-colors">{{ t.logout }}</button>
                 </div>
             </div>
         </nav>
@@ -133,9 +133,9 @@
                 <!-- Overview Card -->
                 <div class="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 flex flex-col md:flex-row items-center gap-10">
                     <div class="relative w-48 h-48 flex-shrink-0">
-                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <path class="text-gray-100" stroke-width="2.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path :class="scoreColor" stroke-width="2.5" :stroke-dasharray="result.overall_score + ', 100'" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="15.9155" class="stroke-gray-100" stroke-width="2.5" fill="none" />
+                            <circle cx="18" cy="18" r="15.9155" :class="['fill-none', scoreColor]" stroke-width="2.5" :stroke-dasharray="result.overall_score + ', 100'" stroke-linecap="round" />
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center">
                             <span class="text-5xl font-extrabold text-gray-900">{{ result.overall_score }}</span>
