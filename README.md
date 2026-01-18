@@ -11,13 +11,15 @@ StreamCoach AI is a powerful web application designed to automatically analyze t
 ## ✨ Key Features
 
 *   **Multimodal Analysis**: "Sees" your product presentation (lighting, clarity, gestures) and "hears" your sales pitch (tone, enthusiasm, pacing) simultaneously.
-*   **Timeline Analysis**: Identifies specific moments (timestamped flags) where issues occurred, such as "dead air," "product blur," or "low energy."
-*   **Instant Scoring**: Provides an objective 0-100 performance score based on industry standards for categories like Jewelry, Fashion, Gaming, and General Sales.
+*   **Internationalization (i18n)**: Fully localized UI and AI responses in **English, Indonesian, Spanish, Chinese, and Japanese**.
+*   **Smart Queue System**: Protects the server from overload. Supports **Local (In-Memory)** and **Production (Redis)** queuing modes to limit concurrent analysis tasks.
+*   **Large File Support**: Optimized handling for video uploads up to **1GB**.
+*   **Resource Efficiency**: Automatically cancels heavy processing (FFmpeg & AI) if the user disconnects, saving server resources and API quota.
+*   **Timeline Analysis**: Identifies specific moments (timestamped flags) where issues occurred.
 *   **Privacy-First & Secure**:
     *   **BYOK (Bring Your Own Key)**: Your Google Gemini API Key is stored safely in your browser's **LocalStorage**, never on our servers.
-    *   **Auto-Cleanup**: Video files are processed immediately and deleted from the server to ensure data privacy and save storage space.
-*   **PDF Reports**: Export your audit results into a professional PDF format for offline review and coaching.
-*   **Cost-Effective**: Optimized for Gemini 3 Flash Preview for high-speed, low-cost analysis.
+    *   **Auto-Cleanup**: Video files and extracted assets are deleted immediately after processing.
+*   **PDF Reports**: Export your audit results into a professional PDF format.
 
 ---
 
@@ -26,8 +28,10 @@ StreamCoach AI is a powerful web application designed to automatically analyze t
 *   **Backend**: Go (Golang)
 *   **AI Engine**: Google GenAI SDK (Gemini 3 Flash Preview)
 *   **Video Processing**: FFmpeg (Frame extraction & Audio separation)
+*   **Queue/Concurrency**: Native Channels (Local) / Redis (Production)
 *   **Frontend**: Vue.js 3 (Composition API)
 *   **Styling**: Tailwind CSS
+*   **Alerts**: SweetAlert2
 *   **PDF Generation**: jsPDF & AutoTable
 
 ---
@@ -38,8 +42,9 @@ Before running the application, ensure you have the following installed:
 
 1.  **Go** (version 1.21 or higher) - [Download Go](https://go.dev/dl/)
 2.  **FFmpeg** - [Download FFmpeg](https://ffmpeg.org/download.html)
-    *   *Crucial*: Ensure `ffmpeg` is added to your system's PATH variable so it can be executed from the command line.
+    *   *Crucial*: Ensure `ffmpeg` is added to your system's PATH variable.
 3.  **Google Gemini API Key** - [Get a free key](https://aistudio.google.com/app/apikey)
+4.  **(Optional) Redis**: Required only if running in `production` mode for distributed queuing.
 
 ---
 
@@ -51,58 +56,52 @@ Before running the application, ensure you have the following installed:
     cd streamcoach-ai
     ```
 
-2.  **Install Go Dependencies**
+2.  **Install Dependencies**
     ```bash
     go mod tidy
     ```
 
-3.  **Verify FFmpeg**
-    Ensure FFmpeg is accessible:
+3.  **Configure Environment**
+    Copy the example environment file:
+    ```bash
+    cp .env.example .env
+    ```
+    *   By default, `APP_ENV=local` uses in-memory queuing (no Redis required).
+    *   To use Redis, set `APP_ENV=production` and configure `REDIS_ADDR`.
+
+4.  **Verify FFmpeg**
     ```bash
     ffmpeg -version
     ```
 
-4.  **Build the Application**
+5.  **Build and Run**
     ```bash
     go build -o streamcoach.exe
-    ```
-
-5.  **Run the Server**
-    ```bash
     ./streamcoach.exe
     ```
 
 6.  **Access the App**
-    Open your browser and navigate to:
-    ```
-    http://localhost:8080
-    ```
+    Open `http://localhost:8080`
 
 ---
 
-## 📖 How to Use
+## 🔧 Configuration (.env)
 
-1.  **Dashboard**: Landing page explaining the tool's value. Click "Analyze Now".
-2.  **API Key Setup**: You will be prompted to enter your Gemini API Key. This is saved in your browser so you don't need to re-enter it every time.
-3.  **Upload & Analyze**:
-    *   Select your stream category (e.g., Jewelry, Fashion).
-    *   Upload a video file (MP4/MOV, suggested < 50MB for the demo).
-    *   Click "Analyze Stream".
-4.  **View Results**: Watch the progress bar as the AI extracts frames and audio.
-5.  **Review Audit**:
-    *   Check your **Overall Score**.
-    *   Read the **Executive Summary**.
-    *   Review **Strengths & Weaknesses**.
-    *   Analyze the **Timeline Flags** for specific moments to fix.
-    *   Read the **Coach's Advice**.
-6.  **Export**: Click "Export PDF" to save your report.
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `APP_ENV` | `local` | Set to `production` to enable Redis queue. |
+| `MAX_CONCURRENT_TASKS` | `2` | Maximum number of simultaneous analysis tasks. |
+| `REDIS_ADDR` | `localhost:6379` | Address of your Redis server (Prod only). |
+| `REDIS_PASSWORD` | - | Redis password (if any). |
+| `REDIS_DB` | `0` | Redis Database index. |
 
 ---
 
 ## 🔒 Security & Privacy
 
 *   **No Persistent Storage**: We do not store your API keys or video files on the backend.
-*   **Ephemeral Processing**: Videos are uploaded to a temporary folder, processed by FFmpeg, and **immediately deleted**. The extracted frames and audio are also deleted as soon as the Gemini analysis is complete.
+*   **Ephemeral Processing**: Videos are uploaded to a temporary folder, processed, and **immediately deleted**.
+*   **Client-Side Keys**: API keys remain in your browser's LocalStorage.
 
 ---
 
