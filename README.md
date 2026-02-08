@@ -37,8 +37,44 @@ StreamCoach AI is a powerful web application designed to automatically analyze t
 *   **Alerts**: SweetAlert2
 *   **PDF Generation**: jsPDF & AutoTable
 
-## Architectural diagram
+## 🏗️ Architecture Overview
 <img width="2816" height="1536" alt="Gemini_Generated_Image_464juz464juz464j" src="https://github.com/user-attachments/assets/a075972a-5693-4fb6-94c5-b2027747bd17" />
+The system follows a modern, decoupled architecture designed for speed and privacy. It leverages **Golang** for high-performance backend processing and **Google Gemini 3 Flash Preview** for multimodal AI analysis.
+
+#### 1. Frontend Layer (User Interface)
+* **Tech Stack:** **Vue.js** (Framework) & **Tailwind CSS** (Styling).
+* **Function:**
+    * Provides a responsive dashboard for users to upload live stream recordings.
+    * **Privacy-First Security:** The user's Gemini API Key is stored securely in the browser's **Local Storage**. It is never saved to our database, ensuring a "Bring Your Own Key" (BYOK) architecture.
+    * Visualizes the JSON analysis data into interactive charts, timelines, and scorecards.
+
+#### 2. Backend Orchestration
+* **Tech Stack:** **Golang (Go)**.
+* **Function:**
+    * Acts as the central orchestrator, handling API requests from the frontend.
+    * Manages **Temporary Storage** to briefly hold uploaded video files during the processing stage.
+    * Utilizes Go’s concurrency model (Goroutines) to handle multiple analysis requests efficiently without blocking the server.
+
+#### 3. Media Processing Engine
+* **Tool:** **FFmpeg**.
+* **Workflow:**
+    * Once the video reaches the backend, Golang executes FFmpeg commands to split the media into two modalities:
+        1.  **Visual Sampling:** Extracts image frames at specific intervals (e.g., every 5-10 seconds) to reduce payload size while retaining visual context (lighting, gestures, product focus).
+        2.  **Audio Extraction:** Separates the **full audio track** to ensure the AI can analyze vocal intonation, pitch, and energy continuity without interruption.
+
+#### 4. AI Analysis Layer (The Brain)
+* **Model:** **Google Gemini 3 Flash Preview**.
+* **Workflow:**
+    * The Backend constructs a **Multimodal Prompt** containing the sampled image frames, the full audio file, and the user-selected context (e.g., "Jewelry Sales" or "Fashion").
+    * This payload is sent to the Gemini API.
+    * Gemini processes the inputs simultaneously ("watching" the frames and "listening" to the audio) to generate a holistic audit.
+
+#### 5. Data Output & Visualization
+* **Result:** Gemini returns a structured **JSON** response containing:
+    * Overall Performance Score (0-100).
+    * Timestamped flags for issues (e.g., "Blurry product at 02:15").
+    * Actionable coaching tips.
+* The Golang backend forwards this JSON to the Frontend, which renders it into the user-friendly "Stream Health Report."
 
 ---
 
