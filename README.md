@@ -37,6 +37,9 @@ StreamCoach AI is a powerful web application designed to automatically analyze t
 *   **Alerts**: SweetAlert2
 *   **PDF Generation**: jsPDF & AutoTable
 
+## Architectural diagram
+<img width="2816" height="1536" alt="Gemini_Generated_Image_464juz464juz464j" src="https://github.com/user-attachments/assets/a075972a-5693-4fb6-94c5-b2027747bd17" />
+
 ---
 
 ## ⚙️ Prerequisites
